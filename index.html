@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- Version 2026-11-16 : detection des refus FormSubmit + message dedie au fichier local -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -970,6 +971,12 @@ function sendReport(){
       report.text);
     return;
   }
+  if(typeof location === "object" && location.protocol === "file:"){
+    showReportDialog("📋", "Envoi impossible depuis un fichier local",
+      "Le service d\'envoi refuse les pages ouvertues comme fichiers. Pour envoyer ton rapport, ouvre l\'application depuis l\'adresse en ligne donnée par ton professeur. En attendant, tu peux copier ton rapport ci-dessous.",
+      report.text);
+    return;
+  }
   fetch("https://formsubmit.co/ajax/" + REPORT_CONFIG.teacherEmail, {
     method: "POST",
     headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -982,14 +989,22 @@ function sendReport(){
       rapport: report.text
     })
   }).then(function(res){
-    if(res.ok){
-      showReportDialog("✅", "Rapport envoyé !",
-        "Bravo " + student.name + " ! Tes résultats ont bien été envoyés à ton professeur.",
-        report.text);
-      sfxWin();
-    }else{
-      throw new Error("statut " + res.status);
-    }
+    return res.text().then(function(text){
+      let json = null;
+      try{ json = JSON.parse(text); }catch(e){}
+      const ok = res.ok && json && (json.success === true || json.success === "true");
+      if(ok){
+        showReportDialog("✅", "Rapport envoyé !",
+          "Bravo " + student.name + " ! Tes résultats ont bien été envoyés à ton professeur.",
+          report.text);
+        sfxWin();
+      }else{
+        showReportDialog("❌", "Envoi refusé",
+          "Le service d\'envoi a refusé le rapport : " + (json && json.message ? json.message : "erreur " + res.status)
+          + ". Copie le rapport ci-dessous et transmets-le à ton professeur.",
+          report.text);
+      }
+    });
   }).catch(function(){
     showReportDialog("❌", "Envoi impossible",
       "La connexion a échoué (pas d\'accès à Internet ?). Copie le rapport ci-dessous pour ne rien perdre, et transmet-le à ton professeur.",
