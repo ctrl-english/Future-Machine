@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Version 2026-11-17 : tri 5 boules, machine 2 choix, ordre du menu, envoi reserve au menu apres toutes epreuves -->
+<!-- Version 2026-11-17 : tri 5 boules, machine 2 choix, ordre du menu, envoi au menu apres toutes epreuves, nettoyage du code -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -9,7 +9,7 @@
 :root{
   --bg1:#0b1030; --panel:#171a3d; --panel2:#12142f; --line:#2d3168;
   --txt:#eef1ff; --muted:#9aa3d0;
-  --accent:#8b7cf6; --will:#ffb347; --going:#5eead4;
+  --accent:#8b7cf6;
   --good:#34d399; --bad:#fb7185;
 }
 *{ box-sizing:border-box; }
@@ -86,11 +86,10 @@ main{ max-width:1020px; margin:0 auto; padding:10px 18px 70px; }
 /* tri */
 .pool{ display:flex; flex-wrap:wrap; gap:10px; min-height:60px; padding:12px; background:var(--panel); border:1px dashed var(--line); border-radius:14px; margin-bottom:16px; }
 .zones{ display:grid; grid-template-columns:repeat(auto-fit,minmax(185px,1fr)); gap:12px; }
-.zone h4{ line-height:1.35; }
-.zone h4 .zhint{ display:block; margin:3px 0 0; font-weight:400; font-size:.76rem; opacity:.72; }
 .zone{ min-height:150px; padding:12px; border-radius:14px; border:2px dashed var(--line); transition:border-color .15s, background .15s; }
 .zone.dragover{ border-color:var(--accent); background:rgba(139,124,246,.07); }
-.zone h4{ margin:2px 4px 10px; font-size:.92rem; }
+.zone h4{ margin:2px 4px 10px; font-size:.92rem; line-height:1.35; }
+.zone h4 .zhint{ display:block; margin:3px 0 0; font-weight:400; font-size:.76rem; opacity:.72; }
 .scard{ font:inherit; display:block; width:100%; text-align:left; margin:0 0 10px; padding:11px 14px; border-radius:11px; border:1px solid var(--line); background:var(--panel2); color:var(--txt); cursor:grab; font-size:.95rem; line-height:1.4; }
 .pool .scard{ width:auto; display:inline-block; }
 .scard:hover{ border-color:var(--accent); }
@@ -172,13 +171,18 @@ table.markers th{ color:var(--muted); font-weight:600; }
 
 /* ============================================================
    ⭐ MODIFIEZ VOTRE EXERCICE ICI ⭐
-   Tout le contenu pédagogique se trouve dans les 5 blocs
-   ci-dessous (QUIZ_DATA, SORT_DATA, SORT_ROLES, MEMORY_DATA,
-   SCRAMBLE_DATA, FILL_DATA). Vous pouvez modifier les phrases librement.
+   Tout le contenu pédagogique se trouve dans les blocs
+   ci-dessous (QUIZ_DATA, SORT_ROLES + SORT_DATA, MEMORY_DATA,
+   SCRAMBLE_DATA, FILL_DATA, REPORT_CONFIG). Vous pouvez
+   modifier les phrases librement : le moteur s'adapte
+   automatiquement au nombre de phrases, de rôles et de paires.
    Le champ "why" du quiz est l'explication affichée après
    la réponse. Le reste du fichier est le moteur des jeux.
    ============================================================ */
 
+/* --- Quiz éclair : question à 3 choix, "why" = explication
+   affichée après la réponse, "correct" = index de la bonne
+   option dans "options". --- */
 const QUIZ_DATA = [
   { q:"Look at those black clouds! It ______ rain.", options:["is going to","will","won't"], correct:0,
     why:"Indice visible (les nuages noirs) : prédiction fondée sur ce qu'on voit → <b>be going to</b>." },
@@ -202,7 +206,7 @@ const QUIZ_DATA = [
     why:"Plan déjà préparé (everything is ready) → <b>be going to</b>." }
 ];
 
-/* --- Jeu 2 : Le tri des prophéties (une boule par rôle) ---
+/* --- Le tri des prophéties (une boule de cristal par rôle) ---
    Chaque boule de cristal correspond à UN rôle précis du futur.
    SORT_ROLES = la liste des boules (id = identifiant interne, ico, label = titre
    affiché, hint = petit indice affiché sous le titre).
@@ -228,6 +232,7 @@ const SORT_DATA = [
   { text:"The sky is grey. It is going to snow.", role:"evidence" }
 ];
 
+/* --- Mémo du futur : paires [début de phrase, fin de phrase] --- */
 const MEMORY_DATA = [
   ["This bag is really heavy.", "I'll carry it for you."],
   ["We are going to open", "a second shop in Paris."],
@@ -239,6 +244,7 @@ const MEMORY_DATA = [
   ["I'll send", "you the report tonight."]
 ];
 
+/* --- Mélange temporel : phrases à reconstruire mot par mot --- */
 const SCRAMBLE_DATA = [
   "We are going to open a new store next month.",
   "I will probably call you tomorrow.",
@@ -247,7 +253,7 @@ const SCRAMBLE_DATA = [
   "I think our team will win the final."
 ];
 
-/* --- Jeu 5 : La machine à écrire (deux choix par phrase) ---
+/* --- La machine à écrire (deux choix par phrase) ---
    Pour chaque phrase, l'élève clique sur la bonne des deux propositions.
    "start" et "end" entourent le trou ; "options" = les deux propositions
    (affichées dans un ordre aléatoire) ; "correct" = index (0 ou 1)
@@ -383,10 +389,10 @@ function showResult(cfg){
 /* ---------- Menu ---------- */
 const GAMES = [
   { id:"sort", ico:"🔮", title:"Le tri des prophéties", desc:"Une boule de cristal par rôle : range chaque phrase dans la bonne (décision, promesse, opinion, projet, indice visible).", fn:renderSort },
-  { id:"scramble", ico:"🔀", title:"Mélange temporel", desc:"Remets les mots dans le bon ordre pour reconstruire 5 phrases.", fn:renderScramble },
-  { id:"fill", ico:"✍️", title:"La machine à écrire", desc:"Pour chacune des 8 phrases, choisis la bonne forme du futur entre deux propositions.", fn:renderFill },
-  { id:"quiz", ico:"⚡", title:"Quiz éclair", desc:"10 questions, 20 secondes chacune. Choisis la bonne forme du futur.", fn:renderQuiz },
-  { id:"memory", ico:"🧠", title:"Mémo du futur", desc:"Retrouve les 8 paires de phrases le plus vite possible.", fn:renderMemory }
+  { id:"scramble", ico:"🔀", title:"Mélange temporel", desc:"Remets les mots dans le bon ordre pour reconstruire " + SCRAMBLE_DATA.length + " phrases.", fn:renderScramble },
+  { id:"fill", ico:"✍️", title:"La machine à écrire", desc:"Pour chacune des " + FILL_DATA.length + " phrases, choisis la bonne forme du futur entre deux propositions.", fn:renderFill },
+  { id:"quiz", ico:"⚡", title:"Quiz éclair", desc:QUIZ_DATA.length + " questions, 20 secondes chacune. Choisis la bonne forme du futur.", fn:renderQuiz },
+  { id:"memory", ico:"🧠", title:"Mémo du futur", desc:"Retrouve les " + MEMORY_DATA.length + " paires de phrases le plus vite possible.", fn:renderMemory }
 ];
 
 function renderMenu(){
@@ -415,7 +421,7 @@ function renderMenu(){
     + '<h2>Choisis ton mini-jeu</h2>'
     + '<p class="rules">Objectif : maîtriser <b>will</b> et <b>be going to</b>. Gagne des étoiles sur chaque jeu pour devenir Maître du Futur !</p>'
     + '<div class="menu-grid">' + memoCard + cards + '</div>'
-    + '<p class="total">Étoiles gagnées : <strong>' + total + ' / 15 ★</strong> (records gardés dans ce navigateur) · '
+    + '<p class="total">Étoiles gagnées : <strong>' + total + ' / ' + (GAMES.length * 3) + ' ★</strong> (records gardés dans ce navigateur) · '
     + '<button class="linklike" id="reset-scores">réinitialiser</button></p>'
     + '<p class="player">👤 Joueur : <b>' + (student && student.name ? student.name : "?") + '</b> · '
     + '<button class="linklike" id="change-player">changer de joueur</button></p>'
@@ -443,7 +449,7 @@ function renderMenu(){
   main.querySelector("#send-report").addEventListener("click", sendReport);
 }
 
-/* ---------- Jeu 1 : Quiz éclair ---------- */
+/* ---------- Quiz éclair ---------- */
 function renderQuiz(){
   cleanup();
   lastGame = renderQuiz;
@@ -452,7 +458,7 @@ function renderQuiz(){
   main.innerHTML = '<section class="screen">'
     + '<button class="back" id="q-back">← Menu</button>'
     + '<h2>⚡ Quiz éclair</h2>'
-    + '<p class="rules">10 questions · 20 secondes par question · choisis la bonne forme du futur.</p>'
+    + '<p class="rules">' + items.length + ' questions · 20 secondes par question · choisis la bonne forme du futur.</p>'
     + '<div class="quiz-top"><span id="q-count"></span><span id="q-score"></span></div>'
     + '<div class="timerbar"><div id="q-bar"></div></div>'
     + '<div class="quiz-q panel" id="q-text"></div>'
@@ -528,12 +534,12 @@ function renderQuiz(){
       : stars === 2 ? "Très bien ! Encore un petit effort pour le sans-faute."
       : stars === 1 ? "Pas mal ! Relis le Mémo des règles puis retente ta chance."
       : "Courage ! Commence par le Mémo des règles, ça va beaucoup aider.";
-    showResult({ id:"quiz", ico:"⚡", title:"Quiz éclair", big: st.score + "/10", stars:stars, msg:msg });
+    showResult({ id:"quiz", ico:"⚡", title:"Quiz éclair", big: st.score + "/" + items.length, stars:stars, msg:msg });
   }
   showQuestion();
 }
 
-/* ---------- Jeu 2 : Le tri des prophéties ---------- */
+/* ---------- Tri des prophéties ---------- */
 function renderSort(){
   cleanup();
   lastGame = renderSort;
@@ -544,7 +550,7 @@ function renderSort(){
   main.innerHTML = '<section class="screen">'
     + '<button class="back" id="s-back">← Menu</button>'
     + '<h2>🔮 Le tri des prophéties</h2>'
-    + '<p class="rules">Clique une phrase puis clique une boule (ou fais-la glisser). Chaque boule de cristal représente un rôle précis du futur : à toi de repérer ce que fait la personne ! Quand les 10 phrases sont placées, appuie sur Vérifier. En cas de doute, relis le Mémo des règles.</p>'
+    + '<p class="rules">Clique une phrase puis clique une boule (ou fais-la glisser). Chaque boule de cristal représente un rôle précis du futur : à toi de repérer ce que fait la personne ! Quand les ' + items.length + ' phrases sont placées, appuie sur Vérifier. En cas de doute, relis le Mémo des règles.</p>'
     + '<div class="pool" id="so-pool"></div>'
     + '<div class="zones">'
     + SORT_ROLES.map(function(r){
@@ -600,7 +606,7 @@ function renderSort(){
     const placedCount = items.filter(function(i){ return i.placed; }).length;
     btnCheck.disabled = placedCount < items.length;
     const lockedCount = items.filter(function(i){ return i.locked; }).length;
-    fb.textContent = placedCount + "/10 phrases placées · " + lockedCount + "/10 validées";
+    fb.textContent = placedCount + "/" + items.length + " phrases placées · " + lockedCount + "/" + items.length + " validées";
   }
   zones.forEach(function(z){
     z.addEventListener("click", function(){ if(selected) placeIn(selected, z.dataset.zone); });
@@ -637,12 +643,12 @@ function renderSort(){
       : errors <= 2 ? "Bien joué ! Seulement " + errors + " erreur" + (errors > 1 ? "s" : "") + ". Relis le mémo pour le rôle qui t'a échappé."
       : errors <= 5 ? "Terminé, avec " + errors + " erreurs : les rôles se ressemblent, le mémo t'aidera à les distinguer."
       : "Terminé, mais avec " + errors + " erreurs, un détour par le Mémo des règles s'impose.";
-    showResult({ id:"sort", ico:"🔮", title:"Le tri des prophéties", big:"10/10 placées", stars:stars, msg:msg });
+    showResult({ id:"sort", ico:"🔮", title:"Le tri des prophéties", big: items.length + "/" + items.length + " placées", stars:stars, msg:msg });
   }
   paint();
 }
 
-/* ---------- Jeu 3 : Mémo du futur ---------- */
+/* ---------- Mémo du futur ---------- */
 function renderMemory(){
   cleanup();
   lastGame = renderMemory;
@@ -656,7 +662,7 @@ function renderMemory(){
   main.innerHTML = '<section class="screen">'
     + '<button class="back" id="m-back">← Menu</button>'
     + '<h2>🧠 Mémo du futur</h2>'
-    + '<p class="rules">Retrouve les 8 paires : chaque début de phrase va avec sa fin. Moins de coups, plus d\u2019étoiles !</p>'
+    + '<p class="rules">Retrouve les ' + totalPairs + ' paires : chaque début de phrase va avec sa fin. Moins de coups, plus d\u2019étoiles !</p>'
     + '<div class="quiz-top"><span id="m-moves">Coups : 0</span><span id="m-pairs">Paires : 0/' + totalPairs + '</span></div>'
     + '<div class="mem-grid" id="m-grid"></div>'
     + '</section>';
@@ -708,7 +714,7 @@ function renderMemory(){
   }
 }
 
-/* ---------- Jeu 4 : Mélange temporel ---------- */
+/* ---------- Mélange temporel ---------- */
 function renderScramble(){
   cleanup();
   lastGame = renderScramble;
@@ -808,19 +814,20 @@ function renderScramble(){
   loadSentence();
 }
 
-/* ---------- Jeu 5 : La machine à écrire ---------- */
+/* ---------- Machine à écrire ---------- */
 function renderFill(){
   cleanup();
   lastGame = renderFill;
   let checks = 0, firstScore = 0;
   const items = FILL_DATA.map(function(it){
     return { start:it.start, end:it.end, opts:shuffle(it.options.slice()),
-             correct:it.options[it.correct], picked:null, locked:false, chips:[] };
+             solution:it.options[it.correct], picked:null, locked:false, chips:[] };
   });
+  const half = Math.ceil(items.length / 2);
   main.innerHTML = '<section class="screen">'
     + '<button class="back" id="f-back">← Menu</button>'
     + '<h2>✍️ La machine à écrire</h2>'
-    + '<p class="rules">Pour chaque phrase, clique sur la bonne forme du futur. Le bouton Vérifier s\u2019active à partir de 4 phrases répondues ; les bonnes réponses se valident, tu peux changer ton choix sur les autres et re-vérifier.</p>'
+    + '<p class="rules">Pour chaque phrase, clique sur la bonne forme du futur. Le bouton Vérifier s\u2019active à partir de ' + half + ' phrases répondues ; les bonnes réponses se valident, tu peux changer ton choix sur les autres et re-vérifier.</p>'
     + '<div id="f-rows"></div>'
     + '<div class="feedback" id="f-fb"></div>'
     + '<button class="btn primary" id="f-check" disabled>Vérifier</button>'
@@ -857,18 +864,18 @@ function renderFill(){
     rows.appendChild(row);
   });
   function answered(){ return items.filter(function(i){ return i.picked; }).length; }
-  function refresh(){ btnCheck.disabled = answered() < 4; }
+  function refresh(){ btnCheck.disabled = answered() < half; }
   btnCheck.addEventListener("click", function(){
     checks++;
     let correct = 0;
     items.forEach(function(it){
       if(it.locked){ correct++; return; }
-      if(it.picked === it.correct){
+      if(it.picked === it.solution){
         it.locked = true;
         it.chips.forEach(function(c){
           c.classList.remove("sel");
           c.disabled = true;
-          if(c.textContent === it.correct) c.classList.add("good");
+          if(c.textContent === it.solution) c.classList.add("good");
         });
         correct++;
       }else{
@@ -884,10 +891,10 @@ function renderFill(){
         : firstScore >= 4 ? "Tu as complété toutes les phrases. Rejoue pour tout réussir d'un coup."
         : "Terminé, mais quelques hésitations : un détour par le Mémo des règles ?";
       showResult({ id:"fill", ico:"✍️", title:"La machine à écrire",
-        big: firstScore + "/8 au 1er essai", stars:stars, msg:msg });
+        big: firstScore + "/" + items.length + " au 1er essai", stars:stars, msg:msg });
     }else{
       if(correct > 0) sfxGood(); else sfxBad();
-      fb.textContent = "✅ " + correct + "/8 bonnes réponses. Change ton choix sur une proposition en rouge puis re-vérifie !";
+      fb.textContent = "✅ " + correct + "/" + items.length + " bonnes réponses. Change ton choix sur une proposition en rouge puis re-vérifie !";
     }
   });
 }
@@ -935,7 +942,7 @@ function renderWelcome(){
   main.innerHTML = '<section class="screen">'
     + '<div class="wcard">'
     + '<div class="rico">🚀</div>'
-    + '<h2>Bienvenue dans The Future Machine !</h2>'
+    + '<h2>Bienvenue dans The Future Machine&#8239;!</h2>'
     + '<p class="rules">Avant de jouer, indique ton prénom : ton professeur recevra un rapport avec tes résultats.</p>'
     + '<label for="w-name">Ton prénom</label>'
     + '<input id="w-name" type="text" maxlength="30" autocomplete="off" placeholder="ex. Camille">'
@@ -966,7 +973,7 @@ function renderWelcome(){
   classe.addEventListener("keydown", function(e){ if(e.key === "Enter") go(); });
 }
 
-/* ---------- Rapport et envoi par e-mail (Formspree) ---------- */
+/* ---------- Rapport et envoi par e-mail (FormSubmit) ---------- */
 function buildReport(){
   const d = new Date();
   const dateStr = d.toLocaleDateString("fr-FR") + " à " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
@@ -981,7 +988,7 @@ function buildReport(){
       lines.push(g.title + " : non joué");
     }
   });
-  lines.push("Total : " + total + " / 15 étoiles");
+  lines.push("Total : " + total + " / " + (GAMES.length * 3) + " étoiles");
   const head = "Rapport The Future Machine (will / be going to)"
     + "\nÉtudiant : " + student.name + (student.classe ? " · Classe : " + student.classe : "")
     + "\nDate : " + dateStr
@@ -997,9 +1004,9 @@ function sendReport(){
       report.text);
     return;
   }
-  if(typeof location === "object" && location.protocol === "file:"){
+  if(typeof location !== "undefined" && String(location.protocol) === "file:"){
     showReportDialog("📋", "Envoi impossible depuis un fichier local",
-      "Le service d\'envoi refuse les pages ouvertues comme fichiers. Pour envoyer ton rapport, ouvre l\'application depuis l\'adresse en ligne donnée par ton professeur. En attendant, tu peux copier ton rapport ci-dessous.",
+      "Le service d\'envoi refuse les pages ouvertes comme fichiers. Pour envoyer ton rapport, ouvre l\'application depuis l\'adresse en ligne donnée par ton professeur. En attendant, tu peux copier ton rapport ci-dessous.",
       report.text);
     return;
   }
