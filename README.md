@@ -1,6 +1,6 @@
 # 🚀 The Future Machine
 
-Jeu pédagogique en ligne pour travailler la différence entre **will** et **be going to** (expression du futur en anglais, niveau B1-B2). Application en un seul fichier, sans installation ni dépendance : elle fonctionne entièrement dans le navigateur de l'élève.
+Jeu pédagogique en ligne pour travailler la différence entre **will** et **be going to** (expression du futur en anglais). Application en un seul fichier, sans installation ni dépendance : elle fonctionne entièrement dans le navigateur de l'élève.
 
 ## 🎮 Les 5 mini-jeux
 
