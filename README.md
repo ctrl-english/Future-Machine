@@ -6,7 +6,7 @@ Jeu pédagogique en ligne pour travailler la différence entre **will** et **be 
 
 | Jeu | Objectif |
 | --- | --- |
-| 🔮 Le tri des prophéties | Ranger 10 phrases dans la bonne boule de cristale (décision spontanée, promesse, opinion, projet, indice visible) |
+| 🔮 Le tri des prophéties | Ranger 10 phrases dans la bonne boule de cristal (décision spontanée, promesse, opinion, projet, indice visible) |
 | 🔀 Mélange temporel | Reconstituer 5 phrases en remettant les mots dans le bon ordre |
 | ✍️ La machine à écrire | Choisir la bonne forme du futur entre deux propositions, sur 8 phrases |
 | ⚡ Quiz éclair | 10 questions en 20 secondes chacune |
@@ -27,7 +27,7 @@ Ouvrir simplement `index.html` depuis n'importe quel hébergement statique (GitH
 Tout le contenu pédagogique se trouve dans les blocs de données au début de `index.html`, modifiables librement :
 
 - `QUIZ_DATA` : les 10 questions du quiz, avec les options et l'explication (`why`) affichée après la réponse
-- `SORT_ROLES` et `SORT_DATA` : les rôles (boules de cristale) et les phrases du jeu de tri
+- `SORT_ROLES` et `SORT_DATA` : les rôles (boules de cristal) et les phrases du jeu de tri
 - `MEMORY_DATA` : les 8 paires du mémoire
 - `SCRAMBLE_DATA` : les 5 phrases à reconstituer
 - `FILL_DATA` : les 8 phrases de la machine à écrire
