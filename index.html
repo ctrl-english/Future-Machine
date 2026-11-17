@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Version 2026-11-16 : detection des refus FormSubmit + message dedie au fichier local -->
+<!-- Version 2026-11-17 : tri 5 boules, machine 2 choix, ordre du menu, envoi reserve au menu apres toutes epreuves -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -85,13 +85,12 @@ main{ max-width:1020px; margin:0 auto; padding:10px 18px 70px; }
 
 /* tri */
 .pool{ display:flex; flex-wrap:wrap; gap:10px; min-height:60px; padding:12px; background:var(--panel); border:1px dashed var(--line); border-radius:14px; margin-bottom:16px; }
-.zones{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-@media (max-width:640px){ .zones{ grid-template-columns:1fr; } }
+.zones{ display:grid; grid-template-columns:repeat(auto-fit,minmax(185px,1fr)); gap:12px; }
+.zone h4{ line-height:1.35; }
+.zone h4 .zhint{ display:block; margin:3px 0 0; font-weight:400; font-size:.76rem; opacity:.72; }
 .zone{ min-height:150px; padding:12px; border-radius:14px; border:2px dashed var(--line); transition:border-color .15s, background .15s; }
 .zone.dragover{ border-color:var(--accent); background:rgba(139,124,246,.07); }
 .zone h4{ margin:2px 4px 10px; font-size:.92rem; }
-.zone.zwill{ border-color:rgba(255,179,71,.5); }
-.zone.zgoing{ border-color:rgba(94,234,212,.5); }
 .scard{ font:inherit; display:block; width:100%; text-align:left; margin:0 0 10px; padding:11px 14px; border-radius:11px; border:1px solid var(--line); background:var(--panel2); color:var(--txt); cursor:grab; font-size:.95rem; line-height:1.4; }
 .pool .scard{ width:auto; display:inline-block; }
 .scard:hover{ border-color:var(--accent); }
@@ -116,6 +115,10 @@ main{ max-width:1020px; margin:0 auto; padding:10px 18px 70px; }
 .bank{ display:flex; flex-wrap:wrap; gap:8px; padding:12px; background:var(--panel); border:1px solid var(--line); border-radius:12px; min-height:56px; }
 .chip{ font:inherit; background:#232858; border:1px solid var(--line); color:var(--txt); padding:7px 13px; border-radius:999px; cursor:pointer; font-size:.95rem; }
 .chip:hover{ border-color:var(--accent); }
+.chip.sel{ border-color:var(--accent); background:#2a2f66; box-shadow:0 0 0 2px rgba(139,124,246,.35); }
+.chip.good{ border-color:var(--good); background:rgba(52,211,153,.12); cursor:default; }
+.chip.bad{ border-color:var(--bad); background:rgba(251,113,133,.14); }
+.chip:disabled{ cursor:default; }
 .shake{ animation:shake .4s; }
 @keyframes shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-7px)} 75%{transform:translateX(7px)} }
 .hint{ margin-top:12px; color:#ffd76a; font-size:.9rem; }
@@ -170,8 +173,8 @@ table.markers th{ color:var(--muted); font-weight:600; }
 /* ============================================================
    ⭐ MODIFIEZ VOTRE EXERCICE ICI ⭐
    Tout le contenu pédagogique se trouve dans les 5 blocs
-   ci-dessous (QUIZ_DATA, SORT_DATA, MEMORY_DATA, SCRAMBLE_DATA,
-   FILL_DATA). Vous pouvez modifier les phrases librement.
+   ci-dessous (QUIZ_DATA, SORT_DATA, SORT_ROLES, MEMORY_DATA,
+   SCRAMBLE_DATA, FILL_DATA). Vous pouvez modifier les phrases librement.
    Le champ "why" du quiz est l'explication affichée après
    la réponse. Le reste du fichier est le moteur des jeux.
    ============================================================ */
@@ -199,17 +202,30 @@ const QUIZ_DATA = [
     why:"Plan déjà préparé (everything is ready) → <b>be going to</b>." }
 ];
 
+/* --- Jeu 2 : Le tri des prophéties (une boule par rôle) ---
+   Chaque boule de cristal correspond à UN rôle précis du futur.
+   SORT_ROLES = la liste des boules (id = identifiant interne, ico, label = titre
+   affiché, hint = petit indice affiché sous le titre).
+   SORT_DATA  = les phrases à trier ; "role" = identifiant de la boule visée.
+   Vous pouvez ajouter ou retirer des rôles et des phrases librement. */
+const SORT_ROLES = [
+  { id:"spont",   ico:"⚡",  label:"Décision spontanée",      hint:"décidée au moment de parler" },
+  { id:"promise", ico:"🤝", label:"Promesse ou offre",       hint:"je m'engage, je propose mon aide" },
+  { id:"opinion", ico:"💭", label:"Opinion ou prédiction",  hint:"I think, I'm sure, probably" },
+  { id:"plan",    ico:"🗓️", label:"Intention ou projet",     hint:"décidé à l'avance, déjà prévu" },
+  { id:"evidence",ico:"👀", label:"Prédiction : indice visible", hint:"un signe visible, Look at...!" }
+];
 const SORT_DATA = [
-  { text:"I'll help you carry those boxes.", cat:"will" },
-  { text:"I think our team will win the match.", cat:"will" },
-  { text:"OK, I'll take the blue one.", cat:"will" },
-  { text:"I'm sure you will love this series.", cat:"will" },
-  { text:"I'll answer the door!", cat:"will" },
-  { text:"She is going to visit her grandmother on Sunday.", cat:"going" },
-  { text:"Look at the traffic jam! We are going to be late.", cat:"going" },
-  { text:"He is going to buy a new laptop. He has saved for months.", cat:"going" },
-  { text:"They are going to move to Lyon next month.", cat:"going" },
-  { text:"The sky is grey. It is going to snow.", cat:"going" }
+  { text:"OK, I'll take the blue one.", role:"spont" },
+  { text:"I'll answer the door!", role:"spont" },
+  { text:"I'll help you carry those boxes.", role:"promise" },
+  { text:"I promise I'll call you tonight.", role:"promise" },
+  { text:"I think our team will win the match.", role:"opinion" },
+  { text:"I'm sure you will love this series.", role:"opinion" },
+  { text:"She is going to visit her grandmother on Sunday.", role:"plan" },
+  { text:"They are going to move to Lyon next month.", role:"plan" },
+  { text:"Look at the traffic jam! We are going to be late.", role:"evidence" },
+  { text:"The sky is grey. It is going to snow.", role:"evidence" }
 ];
 
 const MEMORY_DATA = [
@@ -231,23 +247,20 @@ const SCRAMBLE_DATA = [
   "I think our team will win the final."
 ];
 
+/* --- Jeu 5 : La machine à écrire (deux choix par phrase) ---
+   Pour chaque phrase, l'élève clique sur la bonne des deux propositions.
+   "start" et "end" entourent le trou ; "options" = les deux propositions
+   (affichées dans un ordre aléatoire) ; "correct" = index (0 ou 1)
+   de la bonne réponse dans "options". */
 const FILL_DATA = [
-  { start:"I ", end:" come to the meeting tomorrow.", clue:"probably",
-    answers:["will probably come"] },
-  { start:"She ", end:" work this weekend. It's her decision.", clue:"not / work",
-    answers:["isn't going to work", "is not going to work"] },
-  { start:"Don't worry, I ", end:" pay for the coffee.", clue:"pay",
-    answers:["will pay", "'ll pay"] },
-  { start:"They ", end:" build a new warehouse. The contract is signed.", clue:"build",
-    answers:["are going to build"] },
-  { start:"I'm sure he ", end:" fail the exam.", clue:"not / fail",
-    answers:["won't fail", "will not fail"] },
-  { start:"Watch out! That shelf ", end:" fall!", clue:"fall",
-    answers:["is going to fall"] },
-  { start:"I ", end:" buy a new car. I have saved enough money.", clue:"buy",
-    answers:["am going to buy", "'m going to buy"] },
-  { start:"Maybe the manager ", end:" change the schedule next week.", clue:"change",
-    answers:["will change"] }
+  { start:"Don't worry, I ", end:" pay for the coffee.", options:["will", "am going to"], correct:0 },
+  { start:"This bag looks heavy. I ", end:" carry it for you.", options:["am going to", "will"], correct:1 },
+  { start:"She ", end:" work this weekend. It's her decision.", options:["won't", "isn't going to"], correct:1 },
+  { start:"They ", end:" build a new warehouse. The contract is signed.", options:["will", "are going to"], correct:1 },
+  { start:"I'm sure he ", end:" fail the exam.", options:["won't", "isn't going to"], correct:0 },
+  { start:"Maybe the manager ", end:" change the schedule next week.", options:["is going to", "will"], correct:1 },
+  { start:"Watch out! That shelf ", end:" fall!", options:["is going to", "will"], correct:0 },
+  { start:"I ", end:" buy a new car. I have saved enough money.", options:["will", "am going to"], correct:1 }
 ];
 
 /* ⭐ MODIFIEZ VOTRE EXERCICE ICI (rapport par e-mail) ⭐
@@ -358,7 +371,6 @@ function showResult(cfg){
     + '<div class="msg">' + cfg.msg + '</div>'
     + '<button class="btn primary" id="ov-replay">Rejouer</button>'
     + '<button class="btn ghost" id="ov-menu">Retour au menu</button>'
-    + '<button class="btn ghost" id="ov-send">📤 Envoyer mes résultats</button>'
     + '</div>';
   document.body.appendChild(ov);
   if(cfg.stars >= 2){ confetti(); sfxWin(); }
@@ -366,16 +378,15 @@ function showResult(cfg){
   else{ sfxBad(); }
   ov.querySelector("#ov-replay").addEventListener("click", function(){ ov.remove(); lastGame(); });
   ov.querySelector("#ov-menu").addEventListener("click", function(){ ov.remove(); renderMenu(); });
-  ov.querySelector("#ov-send").addEventListener("click", function(){ ov.remove(); sendReport(); });
 }
 
 /* ---------- Menu ---------- */
 const GAMES = [
-  { id:"quiz", ico:"⚡", title:"Quiz éclair", desc:"10 questions, 20 secondes chacune. Choisis la bonne forme du futur.", fn:renderQuiz },
-  { id:"sort", ico:"🔮", title:"Le tri des prophéties", desc:"Place chaque phrase dans la bonne boule de cristal : will ou be going to.", fn:renderSort },
-  { id:"memory", ico:"🧠", title:"Mémo du futur", desc:"Retrouve les 8 paires de phrases le plus vite possible.", fn:renderMemory },
+  { id:"sort", ico:"🔮", title:"Le tri des prophéties", desc:"Une boule de cristal par rôle : range chaque phrase dans la bonne (décision, promesse, opinion, projet, indice visible).", fn:renderSort },
   { id:"scramble", ico:"🔀", title:"Mélange temporel", desc:"Remets les mots dans le bon ordre pour reconstruire 5 phrases.", fn:renderScramble },
-  { id:"fill", ico:"✍️", title:"La machine à écrire", desc:"Complète les 8 phrases avec la bonne forme du futur.", fn:renderFill }
+  { id:"fill", ico:"✍️", title:"La machine à écrire", desc:"Pour chacune des 8 phrases, choisis la bonne forme du futur entre deux propositions.", fn:renderFill },
+  { id:"quiz", ico:"⚡", title:"Quiz éclair", desc:"10 questions, 20 secondes chacune. Choisis la bonne forme du futur.", fn:renderQuiz },
+  { id:"memory", ico:"🧠", title:"Mémo du futur", desc:"Retrouve les 8 paires de phrases le plus vite possible.", fn:renderMemory }
 ];
 
 function renderMenu(){
@@ -389,24 +400,30 @@ function renderMenu(){
       + '<div><span class="best">' + (best[g.id] ? starsHTML(best[g.id]) : "☆☆☆") + '</span> <span class="tag">record</span></div>'
       + '</div>';
   }).join("");
-  const total = GAMES.reduce(function(s, g){ return s + (best[g.id] || 0); }, 0);
-  main.innerHTML = '<section class="screen">'
-    + '<h2>Choisis ton mini-jeu</h2>'
-    + '<p class="rules">Objectif : maîtriser <b>will</b> et <b>be going to</b>. Gagne des étoiles sur chaque jeu pour devenir Maître du Futur !</p>'
-    + '<div class="menu-grid">' + cards
-    + '<div class="game-card" data-game="memo">'
+  const memoCard = '<div class="game-card" data-game="memo">'
     + '<div class="ico">📘</div><h3>Mémo des règles</h3>'
     + '<p>La fiche de révision avant de jouer : quand utiliser will, quand utiliser be going to.</p>'
     + '<div><span class="tag">fiche</span></div>'
-    + '</div></div>'
+    + '</div>';
+  const total = GAMES.reduce(function(s, g){ return s + (best[g.id] || 0); }, 0);
+  const played = GAMES.filter(function(g){ return sessionResults[g.id]; }).length;
+  const playedAll = played === GAMES.length;
+  const sendHint = playedAll
+    ? "Toutes les épreuves ont été jouées : envoi possible."
+    : "Le bouton s'active après au moins un essai dans chaque épreuve (" + played + "/" + GAMES.length + " jouées).";
+  main.innerHTML = '<section class="screen">'
+    + '<h2>Choisis ton mini-jeu</h2>'
+    + '<p class="rules">Objectif : maîtriser <b>will</b> et <b>be going to</b>. Gagne des étoiles sur chaque jeu pour devenir Maître du Futur !</p>'
+    + '<div class="menu-grid">' + memoCard + cards + '</div>'
     + '<p class="total">Étoiles gagnées : <strong>' + total + ' / 15 ★</strong> (records gardés dans ce navigateur) · '
     + '<button class="linklike" id="reset-scores">réinitialiser</button></p>'
     + '<p class="player">👤 Joueur : <b>' + (student && student.name ? student.name : "?") + '</b> · '
     + '<button class="linklike" id="change-player">changer de joueur</button></p>'
     + '<div class="sendbox panel">'
     + '<h3>📤 Terminer ta session ?</h3>'
-    + '<p>Envoie tes résultats à ton professeur : il recevra un rapport avec tes scores et tes étoiles.</p>'
-    + '<button class="btn primary" id="send-report">Envoyer mon rapport</button>'
+    + '<p>Envoie tes résultats à ton professeur : il recevra un rapport avec tes scores et tes étoiles de chaque épreuve.</p>'
+    + '<button class="btn primary" id="send-report"' + (playedAll ? "" : " disabled") + '>Envoyer mon rapport</button>'
+    + '<p class="clue" id="send-hint">' + sendHint + '</p>'
     + '</div>'
     + '</section>';
   main.querySelectorAll(".game-card").forEach(function(card){
@@ -521,17 +538,19 @@ function renderSort(){
   cleanup();
   lastGame = renderSort;
   const items = shuffle(SORT_DATA).map(function(s, i){
-    return { id:"c" + i, text:s.text, cat:s.cat, placed:null, locked:false };
+    return { id:"c" + i, text:s.text, role:s.role, placed:null, locked:false };
   });
   let selected = null, errors = 0;
   main.innerHTML = '<section class="screen">'
     + '<button class="back" id="s-back">← Menu</button>'
     + '<h2>🔮 Le tri des prophéties</h2>'
-    + '<p class="rules">Clique une phrase puis clique une boule (ou fais-la glisser). Chaque boule porte les fonctions d\'une des deux formes : rappelle-toi laquelle est will et laquelle est be going to. Quand les 10 phrases sont placées, appuie sur Vérifier. En cas de doute, relis le Mémo des règles.</p>'
+    + '<p class="rules">Clique une phrase puis clique une boule (ou fais-la glisser). Chaque boule de cristal représente un rôle précis du futur : à toi de repérer ce que fait la personne ! Quand les 10 phrases sont placées, appuie sur Vérifier. En cas de doute, relis le Mémo des règles.</p>'
     + '<div class="pool" id="so-pool"></div>'
     + '<div class="zones">'
-    + '<div class="zone zwill" data-zone="will"><h4>🔮 Décision spontanée, promesse, opinion</h4></div>'
-    + '<div class="zone zgoing" data-zone="going"><h4>🔮 Intention, projet décidé à l\'avance, indice visible</h4></div>'
+    + SORT_ROLES.map(function(r){
+        return '<div class="zone" data-zone="' + r.id + '"><h4>' + r.ico + ' ' + r.label
+             + '<span class="zhint">' + r.hint + '</span></h4></div>';
+      }).join("")
     + '</div>'
     + '<div class="feedback" id="so-fb"></div>'
     + '<button class="btn primary" id="so-check" disabled>Vérifier</button>'
@@ -575,9 +594,8 @@ function renderSort(){
         e.dataTransfer.setData("text/plain", it.id);
         e.dataTransfer.effectAllowed = "move";
       });
-      if(it.placed === "will") zones[0].appendChild(b);
-      else if(it.placed === "going") zones[1].appendChild(b);
-      else pool.appendChild(b);
+      const z = zones.find(function(zz){ return zz.dataset.zone === it.placed; });
+      if(z){ z.appendChild(b); }else{ pool.appendChild(b); }
     });
     const placedCount = items.filter(function(i){ return i.placed; }).length;
     btnCheck.disabled = placedCount < items.length;
@@ -598,7 +616,7 @@ function renderSort(){
     let wrong = 0;
     items.forEach(function(it){
       if(it.placed && !it.locked){
-        if(it.placed === it.cat){ it.locked = true; }
+        if(it.placed === it.role){ it.locked = true; }
         else{ it.placed = null; wrong++; errors++; }
       }
     });
@@ -614,9 +632,10 @@ function renderSort(){
     }
   });
   function finish(){
-    const stars = errors <= 1 ? 3 : errors <= 4 ? 2 : 1;
-    const msg = errors === 0 ? "Sans faute ! Tu sais exactement quand utiliser will et be going to."
-      : errors <= 4 ? "Bien joué ! " + errors + " erreur" + (errors > 1 ? "s" : "") + " au total. Relis le mémo pour les éviter."
+    const stars = errors <= 2 ? 3 : errors <= 5 ? 2 : 1;
+    const msg = errors === 0 ? "Sans faute ! Tu maîtrises tous les rôles du futur : décision, promesse, opinion, projet, indice."
+      : errors <= 2 ? "Bien joué ! Seulement " + errors + " erreur" + (errors > 1 ? "s" : "") + ". Relis le mémo pour le rôle qui t'a échappé."
+      : errors <= 5 ? "Terminé, avec " + errors + " erreurs : les rôles se ressemblent, le mémo t'aidera à les distinguer."
       : "Terminé, mais avec " + errors + " erreurs, un détour par le Mémo des règles s'impose.";
     showResult({ id:"sort", ico:"🔮", title:"Le tri des prophéties", big:"10/10 placées", stars:stars, msg:msg });
   }
@@ -681,8 +700,8 @@ function renderMemory(){
     }
   }
   function finish(){
-    const stars = moves <= 12 ? 3 : moves <= 18 ? 2 : 1;
-    const msg = moves <= 12 ? "Mémoire de maître !"
+    const stars = moves <= 14 ? 3 : moves <= 18 ? 2 : 1;
+    const msg = moves <= 14 ? "Mémoire de maître !"
       : moves <= 18 ? "Solide ! Tu peux encore gagner une étoile."
       : "Terminé ! Retente pour améliorer ton record.";
     showResult({ id:"memory", ico:"🧠", title:"Mémo du futur", big: moves + " coups", stars:stars, msg:msg });
@@ -794,17 +813,23 @@ function renderFill(){
   cleanup();
   lastGame = renderFill;
   let checks = 0, firstScore = 0;
+  const items = FILL_DATA.map(function(it){
+    return { start:it.start, end:it.end, opts:shuffle(it.options.slice()),
+             correct:it.options[it.correct], picked:null, locked:false, chips:[] };
+  });
   main.innerHTML = '<section class="screen">'
     + '<button class="back" id="f-back">← Menu</button>'
     + '<h2>✍️ La machine à écrire</h2>'
-    + '<p class="rules">Écris la forme correcte dans chaque phrase. Le bouton Vérifier s\u2019active à partir de 4 phrases remplies.</p>'
+    + '<p class="rules">Pour chaque phrase, clique sur la bonne forme du futur. Le bouton Vérifier s\u2019active à partir de 4 phrases répondues ; les bonnes réponses se valident, tu peux changer ton choix sur les autres et re-vérifier.</p>'
     + '<div id="f-rows"></div>'
     + '<div class="feedback" id="f-fb"></div>'
     + '<button class="btn primary" id="f-check" disabled>Vérifier</button>'
     + '</section>';
   main.querySelector("#f-back").addEventListener("click", renderMenu);
   const rows = main.querySelector("#f-rows");
-  FILL_DATA.forEach(function(it, i){
+  const btnCheck = main.querySelector("#f-check");
+  const fb = main.querySelector("#f-fb");
+  items.forEach(function(it, i){
     const row = document.createElement("div");
     row.className = "fill-row";
     const num = document.createElement("span");
@@ -812,48 +837,49 @@ function renderFill(){
     num.textContent = (i + 1) + ".";
     const p = document.createElement("span");
     p.appendChild(document.createTextNode(it.start));
-    const inp = document.createElement("input");
-    inp.type = "text";
-    inp.autocomplete = "off";
-    inp.spellcheck = false;
-    inp.setAttribute("aria-label", "réponse " + (i + 1));
-    p.appendChild(inp);
-    p.appendChild(document.createTextNode(it.end + " "));
-    const clue = document.createElement("span");
-    clue.className = "clue";
-    clue.textContent = "(" + it.clue + ")";
-    row.appendChild(num); row.appendChild(p); row.appendChild(clue);
+    it.opts.forEach(function(opt){
+      const c = document.createElement("button");
+      c.type = "button";
+      c.className = "chip";
+      c.textContent = opt;
+      c.addEventListener("click", function(){
+        if(it.locked) return;
+        it.picked = opt;
+        it.chips.forEach(function(x){ x.classList.remove("sel", "bad"); });
+        c.classList.add("sel");
+        refresh();
+      });
+      it.chips.push(c);
+      p.appendChild(c);
+    });
+    p.appendChild(document.createTextNode(it.end));
+    row.appendChild(num); row.appendChild(p);
     rows.appendChild(row);
   });
-  const inputs = Array.prototype.slice.call(main.querySelectorAll("input"));
-  const btnCheck = main.querySelector("#f-check");
-  const fb = main.querySelector("#f-fb");
-  function filled(){ return inputs.filter(function(i){ return i.value.trim() !== ""; }).length; }
-  function refresh(){ btnCheck.disabled = filled() < 4; }
-  inputs.forEach(function(inp){
-    inp.addEventListener("input", function(){ inp.classList.remove("bad"); refresh(); });
-  });
+  function answered(){ return items.filter(function(i){ return i.picked; }).length; }
+  function refresh(){ btnCheck.disabled = answered() < 4; }
   btnCheck.addEventListener("click", function(){
     checks++;
     let correct = 0;
-    inputs.forEach(function(inp, i){
-      if(inp.dataset.locked === "1"){ correct++; return; }
-      const ok = FILL_DATA[i].answers.some(function(a){ return norm(a) === norm(inp.value); });
-      if(ok){
-        inp.dataset.locked = "1";
-        inp.disabled = true;
-        inp.classList.add("good");
-        inp.classList.remove("bad");
+    items.forEach(function(it){
+      if(it.locked){ correct++; return; }
+      if(it.picked === it.correct){
+        it.locked = true;
+        it.chips.forEach(function(c){
+          c.classList.remove("sel");
+          c.disabled = true;
+          if(c.textContent === it.correct) c.classList.add("good");
+        });
         correct++;
       }else{
-        inp.classList.add("bad");
-        setTimeout(function(){ inp.classList.remove("bad"); }, 700);
+        const c = it.chips.find(function(x){ return x.textContent === it.picked; });
+        if(c){ c.classList.add("bad"); setTimeout(function(){ c.classList.remove("bad"); }, 700); }
       }
     });
     if(checks === 1) firstScore = correct;
-    if(correct === inputs.length){
-      const stars = firstScore === inputs.length ? 3 : firstScore >= 6 ? 2 : firstScore >= 4 ? 1 : 0;
-      const msg = firstScore === inputs.length ? "Sans faute dès le premier essai : impressionnant !"
+    if(correct === items.length){
+      const stars = firstScore === items.length ? 3 : firstScore >= 6 ? 2 : firstScore >= 4 ? 1 : 0;
+      const msg = firstScore === items.length ? "Sans faute dès le premier essai : impressionnant !"
         : firstScore >= 6 ? "Très bien ! Tu peux viser le sans-faute au premier essai."
         : firstScore >= 4 ? "Tu as complété toutes les phrases. Rejoue pour tout réussir d'un coup."
         : "Terminé, mais quelques hésitations : un détour par le Mémo des règles ?";
@@ -861,7 +887,7 @@ function renderFill(){
         big: firstScore + "/8 au 1er essai", stars:stars, msg:msg });
     }else{
       if(correct > 0) sfxGood(); else sfxBad();
-      fb.textContent = "✅ " + correct + "/8 bonnes réponses. Corrige les champs en rouge puis re-vérifie !";
+      fb.textContent = "✅ " + correct + "/8 bonnes réponses. Change ton choix sur une proposition en rouge puis re-vérifie !";
     }
   });
 }
